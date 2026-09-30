@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Menu – Kiki Kitchen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#fff;--ink:#14342b;--muted:#5b7269;--line:#14342b33;--yellow:#ffc82e}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1f1a;--ink:#f2efe2;--muted:#a6b8af;--line:#f2efe233}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'DM Sans',system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom,0px)}
+header{background:var(--yellow);color:#14342b;padding:calc(28px + env(safe-area-inset-top,0px)) 20px 20px}
+h1,h2{font-family:'Bricolage Grotesque',sans-serif;margin:0}
+h1{font-size:2rem}header p{margin:2px 0 0}
+main{max-width:640px;margin:0 auto;padding:4px 20px 40px}
+h2{font-size:1.3rem;margin:26px 0 6px;padding-bottom:6px;border-bottom:3px solid var(--yellow)}
+.item{display:flex;gap:14px;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)}
+.item img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex:none}
+.t{flex:1;min-width:0}.t b{display:block}.t small{display:block;color:var(--muted)}
+.p{font-weight:700;white-space:nowrap}
+.out{opacity:.5}.out .n{text-decoration:line-through}
+.tag{font-size:.75rem;background:var(--ink);color:var(--bg);border-radius:6px;padding:1px 6px;margin-left:6px}
+.msg{padding:40px 0;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<header><h1><a href="index.html" style="color:inherit;text-decoration:none">Our Kitchen</a></h1><p>Menu · <a href="index.html" style="color:inherit">About us</a></p></header>
+<main id="m"><p class="msg">Loading the menu…</p></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SB_URL='https://srkzouqducveytskfuuy.supabase.co';
+const SB_KEY='sb_publishable_1nAtf0inkjIjNcudcPf-gw_QW7jCfUM';
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+(async()=>{
+  const m=document.getElementById('m');
+  try{
+    const sb=supabase.createClient(SB_URL,SB_KEY);
+    const [c,d]=await Promise.all([sb.from('categories').select('*').order('position'),sb.from('dishes').select('*').order('position')]);
+    if(c.error)throw c.error;if(d.error)throw d.error;
+    const html=c.data.map(cat=>{
+      const items=d.data.filter(x=>x.category_id===cat.id);
+      if(!items.length)return '';
+      return `<h2>${esc(cat.name)}</h2>`+items.map(x=>`<div class="item ${x.sold_out?'out':''}">
+        ${x.image_path?`<img src="${SB_URL}/storage/v1/object/public/dish-images/${encodeURIComponent(x.image_path)}" alt="" loading="lazy">`:''}
+        <div class="t"><b><span class="n">${esc(x.name)}</span>${x.sold_out?'<span class="tag">Sold out</span>':''}</b><small>${esc(x.description)}</small></div>
+        <div class="p">KES ${Number(x.price_kes).toLocaleString('en-KE')}</div></div>`).join('');
+    }).join('');
+    m.innerHTML=html||'<p class="msg">The menu is being updated. Please check back soon.</p>';
+  }catch(e){m.innerHTML='<p class="msg">We could not load the menu. Please ask at the counter.</p>'}
+})();
+</script>
+</body>
+</html>

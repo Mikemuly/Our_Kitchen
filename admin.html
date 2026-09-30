@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Our Kitchen – owner admin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#fffdf5;--ink:#14342b;--muted:#5b7269;--line:#14342b26;--yellow:#ffc82e;--green:#14342b;--red:#b3261e;--card:#fff;--btn-ink:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1f1a;--ink:#f2efe2;--muted:#a6b8af;--line:#f2efe233;--card:#172a23;--green:#ffc82e;--btn-ink:#14342b}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'DM Sans',system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom,0px)}
+h1,h2,h3{font-family:'Bricolage Grotesque',sans-serif;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #2f7cff;outline-offset:2px}
+.btn{background:var(--green);color:var(--btn-ink);border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer}
+.btn.sec{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.danger{background:transparent;color:var(--red);border:1.5px solid var(--line)}
+.btn.sm{padding:6px 10px;font-size:.9rem}
+.btn[disabled]{opacity:.6;cursor:wait}
+.hidden{display:none!important}
+#login{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--yellow)}
+.box{background:var(--card);padding:32px;border-radius:20px;width:100%;max-width:380px;display:grid;gap:14px}
+label{display:grid;gap:4px;font-weight:500;font-size:.95rem}
+input,select,textarea{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);width:100%}
+.note{color:var(--muted);font-size:.85rem;margin:0}.err{color:var(--red);font-size:.9rem;margin:0;min-height:1.2em}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.who{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:.9rem}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:32px;max-width:1120px;margin:0 auto;padding:24px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:18px;overflow:hidden}
+.cat>h3{padding:14px 18px;border-bottom:1px solid var(--line);font-size:1.15rem;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}.row .d{color:var(--muted);font-size:.9rem;display:block}
+.main{display:flex;gap:12px;align-items:center;min-width:0}
+.grip{cursor:grab;color:var(--muted);font-size:1.3rem;user-select:none}
+.thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--line);flex:none;display:block}
+.row.drag{opacity:.4}.row.over{box-shadow:inset 0 3px 0 var(--yellow)}.cat.over{outline:3px dashed var(--yellow);outline-offset:-3px}
+.tog{display:flex;gap:6px;align-items:center;font-size:.85rem;cursor:pointer}.tog input{width:auto}
+.empty{padding:18px;color:var(--muted);margin:0}
+.side{position:sticky;top:90px;align-self:start}
+.phone{border:8px solid #14342b;border-radius:32px;background:#fff;color:#14342b;height:560px;overflow:auto}
+.ph-head{background:var(--yellow);padding:22px 18px 16px}.ph-head h2{font-size:1.5rem}.ph-head p{margin:0;font-size:.85rem}
+.ph-body{padding:6px 18px 24px}.ph-body h3{font-size:1.05rem;margin:16px 0 6px;border-bottom:2px solid #ffc82e;padding-bottom:4px}
+.pi{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed #14342b33}
+.pl{display:flex;gap:10px;align-items:center}.pl img{width:52px;height:52px;border-radius:8px;object-fit:cover;flex:none}
+.pi small{display:block;color:#5b7269}.pi.out{opacity:.5}.pi.out .n{text-decoration:line-through}
+.pi em{font-style:normal;font-size:.75rem;background:#14342b;color:#fff;border-radius:6px;padding:1px 6px;margin-left:6px}
+dialog{border:0;border-radius:18px;padding:24px;width:min(440px,92vw);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:#0008}
+.frm{display:grid;gap:14px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.frm .end{display:flex;gap:10px;justify-content:flex-end}
+.imgf{display:flex;gap:12px;align-items:center}.imgf .thumb{width:72px;height:72px}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#14342b;color:#fff;padding:10px 18px;border-radius:999px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;max-width:90vw}
+#toast.on{opacity:1}
+@media(max-width:860px){.layout{grid-template-columns:1fr;padding:16px}.side{position:static}.row{grid-template-columns:1fr}.acts{justify-content:flex-start}}
+</style>
+</head>
+<body>
+
+<div id="login" class="hidden">
+  <div class="box">
+    <h1>Our Kitchen</h1>
+    <p class="note">Owner sign in</p>
+    <label>Email<input id="em" type="email" autocomplete="username"></label>
+    <label>Password<input id="pw" type="password" autocomplete="current-password"></label>
+    <p class="err" id="lerr" role="alert"></p>
+    <button class="btn" id="signin">Sign in</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header><h1>Menu editor</h1><div class="who"><span id="who"></span><button class="btn sec sm" id="signout">Sign out</button></div></header>
+  <div class="layout">
+    <main>
+      <div class="bar"><h2>Your menu</h2><div class="acts"><button class="btn sec" id="addcat">Add category</button><button class="btn" id="adddish">Add dish</button></div></div>
+      <div id="list"></div>
+    </main>
+    <aside class="side">
+      <p class="note" style="margin-bottom:8px">What customers see after scanning the QR code.</p>
+      <div class="phone" id="phone" aria-label="Customer menu preview"></div>
+    </aside>
+  </div>
+</div>
+
+<dialog id="dlg"><div class="frm">
+  <h2 id="dtitle">Add dish</h2>
+  <label>Dish name<input id="f-name" maxlength="60"></label>
+  <div class="two">
+    <label>Price (KES)<input id="f-price" type="number" min="0" step="10" inputmode="numeric"></label>
+    <label>Category<select id="f-cat"></select></label>
+  </div>
+  <label>Short description<textarea id="f-desc" rows="2" maxlength="140"></textarea></label>
+  <div class="imgf">
+    <img id="f-prev" class="thumb hidden" alt="Dish photo preview">
+    <div style="display:grid;gap:8px;flex:1;min-width:0">
+      <label>Photo<input id="f-img" type="file" accept="image/*"></label>
+      <button class="btn sec sm hidden" id="f-rm" type="button">Remove photo</button>
+    </div>
+  </div>
+  <p class="err" id="ferr" role="alert"></p>
+  <div class="end"><button class="btn sec" id="dcancel">Cancel</button><button class="btn" id="dsave">Save dish</button></div>
+</div></dialog>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SB_URL='https://srkzouqducveytskfuuy.supabase.co';
+const SB_KEY='sb_publishable_1nAtf0inkjIjNcudcPf-gw_QW7jCfUM';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const kes=n=>'KES '+Number(n).toLocaleString('en-KE');
+const imgUrl=p=>p?`${SB_URL}/storage/v1/object/public/dish-images/${encodeURIComponent(p)}`:'';
+let cats=[],dishes=[],editing=null,pendingBlob=null,keepPath=null,toastT,dragId=null;
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2400)}
+function show(v){$('login').classList.toggle('hidden',v!=='login');$('app').classList.toggle('hidden',v!=='app')}
+async function guard(p){const r=await p;if(r&&r.error){toast(r.error.message);throw r.error}return r}
+
+/* Auth */
+async function enter(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){show('login');return}
+  const {data}=await sb.from('staff').select('role').eq('user_id',session.user.id).maybeSingle();
+  if(!data||data.role!=='owner'){await sb.auth.signOut();$('lerr').textContent='This account is not set up as the owner.';show('login');return}
+  $('who').textContent=session.user.email;show('app');await load();
+}
+$('signin').onclick=async()=>{
+  $('lerr').textContent='';const b=$('signin');b.disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});
+  b.disabled=false;
+  if(error){$('lerr').textContent='Wrong email or password.';return}
+  $('pw').value='';enter();
+};
+$('signout').onclick=async()=>{await sb.auth.signOut();show('login')};
+
+/* Load and render */
+async function load(){
+  const [c,d]=await Promise.all([sb.from('categories').select('*').order('position'),sb.from('dishes').select('*').order('position')]);
+  if(c.error||d.error){toast((c.error||d.error).message);return}
+  cats=c.data;dishes=d.data;render();
+}
+function render(){
+  $('list').innerHTML=cats.map(c=>{
+    const items=dishes.filter(d=>d.category_id===c.id);
+    return `<section class="cat" data-cat="${c.id}"><h3>${esc(c.name)}<span class="acts"><button class="btn sec sm" data-cmv="-1" data-id="${c.id}" aria-label="Move ${esc(c.name)} up">↑</button><button class="btn sec sm" data-cmv="1" data-id="${c.id}" aria-label="Move ${esc(c.name)} down">↓</button><button class="btn danger sm" data-delcat="${c.id}">Remove</button></span></h3>`+
+    (items.length?items.map(d=>`<div class="row" draggable="true" data-id="${d.id}"><div class="main"><span class="grip" aria-hidden="true" title="Drag to reorder">⠿</span>${d.image_path?`<img class="thumb" src="${imgUrl(d.image_path)}" alt="">`:'<span class="thumb"></span>'}<div><b>${esc(d.name)} · ${kes(d.price_kes)}</b><span class="d">${esc(d.description)}</span></div></div>
+      <div class="acts"><label class="tog"><input type="checkbox" data-out="${d.id}" ${d.sold_out?'checked':''}> Sold out</label>
+      <button class="btn sec sm" data-mv="-1" data-id="${d.id}" aria-label="Move ${esc(d.name)} up">↑</button><button class="btn sec sm" data-mv="1" data-id="${d.id}" aria-label="Move ${esc(d.name)} down">↓</button>
+      <button class="btn sec sm" data-edit="${d.id}">Edit</button><button class="btn danger sm" data-del="${d.id}">Delete</button></div></div>`).join(''):'<p class="empty">No dishes yet.</p>')+'</section>';
+  }).join('')||'<p class="empty">Add a category to get started.</p>';
+  $('phone').innerHTML=`<div class="ph-head"><h2>Our Kitchen</h2><p>Menu</p></div><div class="ph-body">`+
+  cats.map(c=>{const it=dishes.filter(d=>d.category_id===c.id);return it.length?`<h3>${esc(c.name)}</h3>`+it.map(d=>`<div class="pi ${d.sold_out?'out':''}"><div class="pl">${d.image_path?`<img src="${imgUrl(d.image_path)}" alt="">`:''}<div><span class="n">${esc(d.name)}</span>${d.sold_out?'<em>Sold out</em>':''}<small>${esc(d.description)}</small></div></div><b>${Number(d.price_kes).toLocaleString('en-KE')}</b></div>`).join(''):''}).join('')+`</div>`;
+}
+
+/* Photos */
+function resize(file){return new Promise((ok,bad)=>{
+  const r=new FileReader();
+  r.onload=()=>{const im=new Image();
+    im.onload=()=>{const s=Math.min(1,800/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):bad(),'image/jpeg',.8)};
+    im.onerror=bad;im.src=r.result};
+  r.onerror=bad;r.readAsDataURL(file);
+})}
+function showPrev(){
+  const p=$('f-prev'),src=pendingBlob?URL.createObjectURL(pendingBlob):imgUrl(keepPath);
+  p.classList.toggle('hidden',!src);if(src)p.src=src;$('f-rm').classList.toggle('hidden',!src);
+}
+$('f-img').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{pendingBlob=await resize(f);$('ferr').textContent='';showPrev()}catch(x){$('ferr').textContent='That file could not be read as an image.'}
+};
+$('f-rm').onclick=()=>{pendingBlob=null;keepPath=null;$('f-img').value='';showPrev()};
+const removeFile=p=>p?sb.storage.from('dish-images').remove([p]).catch(()=>{}):null;
+
+/* Dish dialog */
+function openDlg(d){
+  editing=d?d.id:null;$('dtitle').textContent=d?'Edit dish':'Add dish';$('ferr').textContent='';
+  $('f-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  $('f-name').value=d?d.name:'';$('f-price').value=d?d.price_kes:'';$('f-desc').value=d?d.description:'';
+  if(d)$('f-cat').value=d.category_id;
+  pendingBlob=null;keepPath=d?d.image_path:null;$('f-img').value='';showPrev();
+  $('dlg').showModal();$('f-name').focus();
+}
+$('adddish').onclick=()=>{if(!cats.length){toast('Add a category first');return}openDlg(null)};
+$('dcancel').onclick=()=>$('dlg').close();
+$('dsave').onclick=async()=>{
+  const name=$('f-name').value.trim(),price=parseInt($('f-price').value,10);
+  if(!name){$('ferr').textContent='Enter a dish name.';return}
+  if(isNaN(price)||price<0){$('ferr').textContent='Enter a price of 0 or more.';return}
+  const b=$('dsave');b.disabled=true;
+  try{
+    const old=editing?dishes.find(x=>x.id===editing).image_path:null;
+    let path=keepPath;
+    if(pendingBlob){path=crypto.randomUUID()+'.jpg';await guard(sb.storage.from('dish-images').upload(path,pendingBlob,{contentType:'image/jpeg'}))}
+    const v={name,price_kes:price,category_id:$('f-cat').value,description:$('f-desc').value.trim(),image_path:path};
+    if(editing){await guard(sb.from('dishes').update(v).eq('id',editing))}
+    else{await guard(sb.from('dishes').insert({...v,position:dishes.length}))}
+    if(old&&old!==path)removeFile(old);
+    $('dlg').close();await load();toast(editing?'Dish updated':'Dish added');
+  }catch(e){$('ferr').textContent=e.message||'Could not save. Try again.'}
+  b.disabled=false;
+};
+
+/* Categories */
+$('addcat').onclick=async()=>{
+  const n=(prompt('New category name')||'').trim();if(!n)return;
+  try{await guard(sb.from('categories').insert({name:n,position:cats.length}));await load();toast('Category added')}catch(e){}
+};
+
+/* Reordering */
+const swap=(a,i,j)=>{[a[i],a[j]]=[a[j],a[i]]};
+async function saveOrder(){
+  try{
+    await Promise.all([
+      ...cats.map((c,i)=>guard(sb.from('categories').update({position:i}).eq('id',c.id))),
+      ...dishes.map((d,i)=>guard(sb.from('dishes').update({position:i,category_id:d.category_id}).eq('id',d.id)))]);
+    toast('Order saved');
+  }catch(e){await load()}
+  render();
+}
+$('list').addEventListener('click',async e=>{
+  const t=e.target.closest('button');if(!t)return;
+  try{
+    if(t.dataset.edit)openDlg(dishes.find(d=>d.id===t.dataset.edit));
+    if(t.dataset.mv){
+      const d=dishes.find(x=>x.id===t.dataset.id),same=dishes.filter(x=>x.category_id===d.category_id),j=same.indexOf(d)+Number(t.dataset.mv);
+      if(j<0||j>=same.length)return;swap(dishes,dishes.indexOf(d),dishes.indexOf(same[j]));render();await saveOrder();
+    }
+    if(t.dataset.cmv){
+      const i=cats.findIndex(c=>c.id===t.dataset.id),j=i+Number(t.dataset.cmv);
+      if(j<0||j>=cats.length)return;swap(cats,i,j);render();await saveOrder();
+    }
+    if(t.dataset.del&&confirm('Delete this dish? It disappears from the customer menu.')){
+      const d=dishes.find(x=>x.id===t.dataset.del);await guard(sb.from('dishes').delete().eq('id',d.id));removeFile(d.image_path);await load();toast('Dish deleted');
+    }
+    if(t.dataset.delcat&&confirm('Remove this category and all its dishes?')){
+      const files=dishes.filter(d=>d.category_id===t.dataset.delcat).map(d=>d.image_path).filter(Boolean);
+      await guard(sb.from('categories').delete().eq('id',t.dataset.delcat));
+      if(files.length)sb.storage.from('dish-images').remove(files).catch(()=>{});
+      await load();toast('Category removed');
+    }
+  }catch(x){}
+});
+$('list').addEventListener('change',async e=>{
+  if(!e.target.dataset.out)return;
+  try{await guard(sb.from('dishes').update({sold_out:e.target.checked}).eq('id',e.target.dataset.out));await load();toast(e.target.checked?'Marked sold out':'Back on the menu')}catch(x){await load()}
+});
+const L=$('list'),clrOver=()=>L.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));
+L.addEventListener('dragstart',e=>{const r=e.target.closest&&e.target.closest('.row');if(!r)return;dragId=r.dataset.id;r.classList.add('drag');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId)});
+L.addEventListener('dragend',()=>{dragId=null;clrOver();L.querySelectorAll('.drag').forEach(x=>x.classList.remove('drag'))});
+L.addEventListener('dragover',e=>{if(!dragId)return;e.preventDefault();clrOver();const el=e.target.closest('.row')||e.target.closest('.cat');if(el)el.classList.add('over')});
+L.addEventListener('drop',async e=>{
+  if(!dragId)return;e.preventDefault();
+  const s=e.target.closest('.cat'),r=e.target.closest('.row');
+  if(!s||(r&&r.dataset.id===dragId)){clrOver();return}
+  const d=dishes.find(x=>x.id===dragId);
+  dishes=dishes.filter(x=>x!==d);d.category_id=s.dataset.cat;
+  if(r){dishes.splice(dishes.indexOf(dishes.find(x=>x.id===r.dataset.id)),0,d)}else{dishes.push(d)}
+  dragId=null;render();await saveOrder();
+});
+
+sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_OUT')show('login')});
+enter();
+</script>
+</body>
+</html>
