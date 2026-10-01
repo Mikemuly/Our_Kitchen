@@ -175,7 +175,7 @@ async function showReceipt(orderId,autoPrint){
   if(o.error||i.error){toast('Could not load the receipt');return}
   const r=o.data,pm={cash:'Cash',mpesa_manual:'M-Pesa',mpesa_stk:'M-Pesa'}[r.payment_method]||'';
   const d=new Date(r.paid_at||r.created_at);
-  $('receipt').innerHTML=`<h2>Our Kitchen</h2><div class="c">[Address and phone number]</div><hr>
+  $('receipt').innerHTML=`<h2>Our Kitchen</h2><div class="c">Tudor Mombasa</div><hr>
     <div class="r"><span>Order #${r.order_no}</span><span>${d.toLocaleDateString('en-KE')} ${d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</span></div><hr>`+
     i.data.map(x=>`<div class="r"><span>${x.qty} x ${esc(x.name)}</span><span>${(x.qty*x.price_kes).toLocaleString('en-KE')}</span></div>`).join('')+
     `<hr><div class="r"><b>TOTAL</b><b>${kes(r.total_kes)}</b></div>`+
