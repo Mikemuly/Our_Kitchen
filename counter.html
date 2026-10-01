@@ -62,6 +62,7 @@ h2.cat{font-size:1.1rem;margin:18px 0 10px}h2.cat:first-child{margin-top:0}
 }
 #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#14342b;color:#fff;padding:12px 20px;border-radius:999px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;max-width:90vw}
 #toast.on{opacity:1}
+.ordwrap{display:flex;gap:6px;align-items:center}.ordwrap .ord{flex:1;min-width:0}.ordwrap .btn{flex:none}
 @media(max-width:860px){.layout{grid-template-columns:1fr}.side{position:static}}
 </style>
 </head>
@@ -128,9 +129,9 @@ async function load(){
   cats=c.data;dishes=d.data;renderMenu();renderTicket();loadRecent();
 }
 async function loadRecent(){
-  const {data,error}=await sb.from('orders').select('id,order_no,status,total_kes,created_at').order('created_at',{ascending:false}).limit(12);
+  const {data,error}=await sb.from('orders').select('id,order_no,status,total_kes,created_at,paid_at').order('created_at',{ascending:false}).limit(12);
   if(error){$('recent').innerHTML='<p class="empty">Could not load orders.</p>';return}
-  $('recent').innerHTML=data.length?data.map(o=>`<button class="ord" data-rc="${o.id}"><span>#${o.order_no} · ${new Date(o.created_at).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</span><span>${kes(o.total_kes)} <span class="st ${o.status}">${o.status}</span></span></button>`).join(''):'<p class="empty">No orders yet.</p>';
+  $('recent').innerHTML=data.length?data.map(o=>`<div class="ordwrap"><button class="ord" data-rc="${o.id}"><span>#${o.order_no} · ${new Date(o.created_at).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</span><span>${kes(o.total_kes)} <span class="st ${o.status}">${o.status}</span></span></button>${o.status==='paid'&&o.paid_at&&Date.now()-new Date(o.paid_at)<10*60000?`<button class="btn danger sm" data-voidrow="${o.id}" data-no="${o.order_no}">Void</button>`:''}</div>`).join(''):'<p class="empty">No orders yet.</p>';
 }
 
 /* Menu and ticket */
@@ -174,7 +175,7 @@ async function showReceipt(orderId,autoPrint){
   if(o.error||i.error){toast('Could not load the receipt');return}
   const r=o.data,pm={cash:'Cash',mpesa_manual:'M-Pesa',mpesa_stk:'M-Pesa'}[r.payment_method]||'';
   const d=new Date(r.paid_at||r.created_at);
-  $('receipt').innerHTML=`<h2>Our Kitchen</h2><div class="c">Tudor Mombasa</div><hr>
+  $('receipt').innerHTML=`<h2>Our Kitchen</h2><div class="c">[Address and phone number]</div><hr>
     <div class="r"><span>Order #${r.order_no}</span><span>${d.toLocaleDateString('en-KE')} ${d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</span></div><hr>`+
     i.data.map(x=>`<div class="r"><span>${x.qty} x ${esc(x.name)}</span><span>${(x.qty*x.price_kes).toLocaleString('en-KE')}</span></div>`).join('')+
     `<hr><div class="r"><b>TOTAL</b><b>${kes(r.total_kes)}</b></div>`+
@@ -183,8 +184,8 @@ async function showReceipt(orderId,autoPrint){
   $('rcpt').showModal();
   if(autoPrint)setTimeout(()=>window.print(),300);
 }
-try{$('auto').checked=localStorage.getItem('our-autoprint')==='1'}catch(e){}
-$('auto').onchange=()=>{try{localStorage.setItem('our-autoprint',$('auto').checked?'1':'0')}catch(e){}};
+try{$('auto').checked=localStorage.getItem('kiki-autoprint')==='1'}catch(e){}
+$('auto').onchange=()=>{try{localStorage.setItem('kiki-autoprint',$('auto').checked?'1':'0')}catch(e){}};
 
 /* M-Pesa waiting */
 function stopPoll(){clearInterval(poll);poll=null}
@@ -213,6 +214,13 @@ document.addEventListener('click',async e=>{
   if(b.id==='rprint')window.print();
   if(b.id==='rclose')$('rcpt').close();
   if(s.rc)showReceipt(s.rc,false);
+  if(s.voidrow){
+    const reason=(prompt('Why is order #'+s.no+' being voided? (required)')||'').trim();
+    if(reason.length<3){toast('A reason is required');return}
+    if(!confirm('Void order #'+s.no+'? Give the customer their money back by hand.'))return;
+    const o=await rpc('void_order',{p_order:s.voidrow,p_reason:reason});
+    if(o){toast('Order #'+s.no+' voided');loadRecent()}
+  }
   if(s.add&&!order){cart[s.add]=(cart[s.add]||0)+1;renderTicket()}
   if(s.inc){cart[s.inc]++;renderTicket()}
   if(s.dec){if(--cart[s.dec]<=0)delete cart[s.dec];renderTicket()}

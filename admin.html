@@ -116,6 +116,7 @@ dialog::backdrop{background:#0008}
       <button class="btn" id="s-run">Show</button><button class="btn sec" id="s-csv">Download CSV</button>
     </div>
     <div class="stats" id="s-stats"></div>
+    <p class="note" id="s-voidby" style="margin-bottom:14px"></p>
     <h3>Best sellers</h3>
     <table><thead><tr><th>Dish</th><th class="n">Sold</th><th class="n">Sales</th></tr></thead><tbody id="s-top"></tbody></table>
     <h3 style="margin-top:20px">By day</h3>
@@ -344,7 +345,7 @@ async function loadOrders(){
 async function loadVoids(){
   const {data,error}=await sb.from('order_voids').select('*').order('voided_at',{ascending:false}).limit(30);
   if(error){toast(error.message);return}
-  $('v-body').innerHTML=data.length?data.map(v=>`<tr><td>#${v.order_no}</td><td>${new Date(v.voided_at).toLocaleString('en-KE',{dateStyle:'medium',timeStyle:'short'})}</td><td class="n">${kes(v.total_kes)}</td><td>${esc(v.reason)}</td><td>${esc(v.voided_by_email||'')}</td></tr>`).join(''):'<tr><td colspan="5">No voided orders.</td></tr>';
+  $('v-body').innerHTML=data.length?data.map(v=>`<tr><td>#${v.order_no}</td><td>${new Date(v.voided_at).toLocaleString('en-KE',{dateStyle:'medium',timeStyle:'short'})}</td><td class="n">${kes(v.total_kes)}</td><td>${esc(v.reason)}</td><td>${esc(v.voided_by_email||'')}${v.voided_by_role?' ('+esc(v.voided_by_role)+')':''}</td></tr>`).join(''):'<tr><td colspan="5">No voided orders.</td></tr>';
 }
 $('o-run').onclick=loadOrders;
 $('o-body').addEventListener('click',async e=>{
@@ -386,6 +387,7 @@ async function runReport(){
   if(error||!r){toast(error?error.message:'No data');return}
   const avg=r.orders?Math.round(r.total/r.orders):0,max=Math.max(1,...r.top.map(x=>x.revenue));
   $('s-stats').innerHTML=[['Total sales',kes(r.total)],['Orders',r.orders],['Cash',kes(r.cash)],['M-Pesa',kes(r.mpesa)],['Average order',kes(avg)],['Voided',(r.voided_count||0)+' · '+kes(r.voided_total||0)]].map(([a,b])=>`<div class="stat"><span>${a}</span><b>${b}</b></div>`).join('');
+  $('s-voidby').textContent=(r.voided_by&&r.voided_by.length)?'Voids by person: '+r.voided_by.map(x=>x.who+' – '+x.count+' ('+kes(x.total)+')').join(' · '):'';
   $('s-top').innerHTML=r.top.length?r.top.map(x=>`<tr><td>${esc(x.name)}<div class="bar2" style="width:${Math.round(x.revenue/max*100)}%"></div></td><td class="n">${x.qty}</td><td class="n">${kes(x.revenue)}</td></tr>`).join(''):'<tr><td colspan="3">No sales in this period.</td></tr>';
   $('s-daily').innerHTML=r.daily.length?r.daily.map(x=>`<tr><td>${x.day}</td><td class="n">${x.orders}</td><td class="n">${kes(x.total)}</td></tr>`).join(''):'<tr><td colspan="3">No sales in this period.</td></tr>';
 }
