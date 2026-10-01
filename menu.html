@@ -24,6 +24,7 @@ h2{font-size:1.3rem;margin:26px 0 6px;padding-bottom:6px;border-bottom:3px solid
 .p{font-weight:700;white-space:nowrap}
 .out{opacity:.5}.out .n{text-decoration:line-through}
 .tag{font-size:.75rem;background:var(--ink);color:var(--bg);border-radius:6px;padding:1px 6px;margin-left:6px}
+.tag.sp{background:var(--yellow);color:#14342b}
 .msg{padding:40px 0;color:var(--muted);text-align:center}
 .sk div{height:18px;border-radius:8px;background:var(--sk);margin:18px 0}
 .sk .h{width:40%;height:24px;margin-top:28px}.sk .w{width:90%}.sk .n{width:70%}
@@ -43,14 +44,17 @@ const m=document.getElementById('m');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const get=t=>fetch(`${SB_URL}/rest/v1/${t}?select=*&order=position.asc`,{headers:{apikey:SB_KEY}}).then(r=>{if(!r.ok)throw new Error(t);return r.json()});
 
-function draw(cats,dishes){
-  const html=cats.map(cat=>{
-    const items=dishes.filter(x=>x.category_id===cat.id);
-    if(!items.length)return '';
-    return `<h2>${esc(cat.name)}</h2>`+items.map(x=>`<div class="item ${x.sold_out?'out':''}">
+const row=x=>`<div class="item ${x.sold_out?'out':''}">
       ${x.image_path?`<img src="${SB_URL}/storage/v1/object/public/dish-images/${encodeURIComponent(x.image_path)}" alt="" width="64" height="64" loading="lazy" decoding="async">`:''}
-      <div class="t"><b><span class="n">${esc(x.name)}</span>${x.sold_out?'<span class="tag">Sold out</span>':''}</b><small>${esc(x.description)}</small></div>
-      <div class="p">KES ${Number(x.price_kes).toLocaleString('en-KE')}</div></div>`).join('');
+      <div class="t"><b><span class="n">${esc(x.name)}</span>${x.is_special?'<span class="tag sp">Special</span>':''}${x.sold_out?'<span class="tag">Sold out</span>':''}</b><small>${esc(x.description)}</small></div>
+      <div class="p">KES ${Number(x.price_kes).toLocaleString('en-KE')}</div></div>`;
+
+function draw(cats,dishes){
+  const sp=dishes.filter(x=>x.is_special&&!x.sold_out);
+  let html=sp.length?`<h2>★ Today's specials</h2>`+sp.map(row).join(''):'';
+  html+=cats.map(cat=>{
+    const items=dishes.filter(x=>x.category_id===cat.id);
+    return items.length?`<h2>${esc(cat.name)}</h2>`+items.map(row).join(''):'';
   }).join('');
   m.innerHTML=html||'<p class="msg">The menu is being updated. Please check back soon.</p>';
 }

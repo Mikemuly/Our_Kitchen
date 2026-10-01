@@ -25,7 +25,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 label{display:grid;gap:4px;font-weight:500;font-size:.95rem}
 input,select,textarea{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);width:100%}
 .note{color:var(--muted);font-size:.85rem;margin:0}.err{color:var(--red);font-size:.9rem;margin:0;min-height:1.2em}
-header{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+header{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5;padding-top:calc(14px + env(safe-area-inset-top,0px))}
 .who{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:.9rem}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:32px;max-width:1120px;margin:0 auto;padding:24px}
 .bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
@@ -49,7 +49,7 @@ header{display:flex;justify-content:space-between;align-items:center;padding:14p
 .pi small{display:block;color:#5b7269}.pi.out{opacity:.5}.pi.out .n{text-decoration:line-through}
 .pi em{font-style:normal;font-size:.75rem;background:#14342b;color:#fff;border-radius:6px;padding:1px 6px;margin-left:6px}
 
-.tabs{display:flex;gap:6px}.tabs button{background:transparent;border:0;border-bottom:3px solid transparent;padding:6px 10px;font-weight:700;cursor:pointer;color:var(--muted)}.tabs button[aria-pressed=true]{color:var(--ink);border-color:var(--yellow)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}.pill{font-size:.75rem;border-radius:6px;padding:1px 8px;background:var(--line)}.tabs button{background:transparent;border:0;border-bottom:3px solid transparent;padding:6px 10px;font-weight:700;cursor:pointer;color:var(--muted)}.tabs button[aria-pressed=true]{color:var(--ink);border-color:var(--yellow)}
 .wrap2{max-width:900px;margin:0 auto;padding:24px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.stat span{color:var(--muted);font-size:.85rem}.stat b{display:block;font-size:1.4rem;font-family:'Bricolage Grotesque',sans-serif}
@@ -79,10 +79,10 @@ dialog::backdrop{background:#0008}
 </div>
 
 <div id="app" class="hidden">
-  <header><h1>Admin</h1><nav class="tabs" aria-label="Sections"><button data-tab="menu" aria-pressed="true">Menu</button><button data-tab="sales" aria-pressed="false">Sales</button><button data-tab="site" aria-pressed="false">Site details</button></nav><div class="who"><span id="who"></span><button class="btn sec sm" id="signout">Sign out</button></div></header>
+  <header><h1>Admin</h1><nav class="tabs" aria-label="Sections"><button data-tab="menu" aria-pressed="true">Menu</button><button data-tab="orders" aria-pressed="false">Orders</button><button data-tab="sales" aria-pressed="false">Sales</button><button data-tab="staff" aria-pressed="false">Staff</button><button data-tab="site" aria-pressed="false">Site details</button></nav><div class="who"><span id="who"></span><button class="btn sec sm" id="signout">Sign out</button></div></header>
   <div class="layout" id="view-menu">
     <main>
-      <div class="bar"><h2>Your menu</h2><div class="acts"><button class="btn sec" id="addcat">Add category</button><button class="btn" id="adddish">Add dish</button></div></div>
+      <div class="bar"><h2>Your menu</h2><div class="acts"><button class="btn sec" id="clrspec">Clear specials</button><button class="btn sec" id="addcat">Add category</button><button class="btn" id="adddish">Add dish</button></div></div>
       <div id="list"></div>
     </main>
     <aside class="side">
@@ -91,6 +91,24 @@ dialog::backdrop{background:#0008}
     </aside>
   </div>
 
+  <div id="view-orders" class="wrap2 hidden">
+    <div class="bar"><h2>Orders</h2><div class="acts"><label>Day<input id="o-date" type="date" style="width:auto"></label><button class="btn" id="o-run">Show</button></div></div>
+    <table><thead><tr><th>Order</th><th>Time</th><th>Paid by</th><th class="n">Total</th><th>Status</th><th></th></tr></thead><tbody id="o-body"></tbody></table>
+    <h3 style="margin-top:24px">Voided orders (latest 30)</h3>
+    <p class="note" style="margin:4px 0 10px">Voiding removes a paid order from the sales figures and records the reason. It does not send money back: return the payment to the customer by hand.</p>
+    <table><thead><tr><th>Order</th><th>When</th><th class="n">Amount</th><th>Reason</th><th>By</th></tr></thead><tbody id="v-body"></tbody></table>
+  </div>
+  <div id="view-staff" class="wrap2 hidden">
+    <h2 style="margin-bottom:6px">Staff</h2>
+    <p class="note" style="margin-bottom:12px">Cashiers can take orders and use the kitchen screen. They cannot edit the menu, see sales or void orders.</p>
+    <table><thead><tr><th>Email</th><th>Role</th><th></th></tr></thead><tbody id="stf-body"></tbody></table>
+    <h3 style="margin:24px 0 10px">Add a cashier</h3>
+    <div class="fgrid">
+      <label>Email<input id="stf-em" type="email" autocomplete="off"></label>
+      <label>Password (at least 8 characters)<input id="stf-pw" type="text" autocomplete="off"></label>
+      <button class="btn" id="stf-add">Add cashier</button>
+    </div>
+  </div>
   <div id="view-sales" class="wrap2 hidden">
     <div class="bar"><h2>Sales</h2><div class="acts"><button class="btn sec sm" id="s-today">Today</button><button class="btn sec sm" id="s-7">7 days</button><button class="btn sec sm" id="s-30">30 days</button></div></div>
     <div class="acts" style="justify-content:flex-start;align-items:flex-end">
@@ -128,6 +146,7 @@ dialog::backdrop{background:#0008}
     <label>Category<select id="f-cat"></select></label>
   </div>
   <label>Short description<textarea id="f-desc" rows="2" maxlength="140"></textarea></label>
+  <label class="tog" style="font-size:1rem"><input type="checkbox" id="f-spec"> Today's special</label>
   <div class="imgf">
     <img id="f-prev" class="thumb hidden" alt="Dish photo preview">
     <div style="display:grid;gap:8px;flex:1;min-width:0">
@@ -183,12 +202,12 @@ function render(){
     const items=dishes.filter(d=>d.category_id===c.id);
     return `<section class="cat" data-cat="${c.id}"><h3>${esc(c.name)}<span class="acts"><button class="btn sec sm" data-cmv="-1" data-id="${c.id}" aria-label="Move ${esc(c.name)} up">↑</button><button class="btn sec sm" data-cmv="1" data-id="${c.id}" aria-label="Move ${esc(c.name)} down">↓</button><button class="btn danger sm" data-delcat="${c.id}">Remove</button></span></h3>`+
     (items.length?items.map(d=>`<div class="row" draggable="true" data-id="${d.id}"><div class="main"><span class="grip" aria-hidden="true" title="Drag to reorder">⠿</span>${d.image_path?`<img class="thumb" src="${imgUrl(d.image_path)}" alt="">`:'<span class="thumb"></span>'}<div><b>${esc(d.name)} · ${kes(d.price_kes)}</b><span class="d">${esc(d.description)}</span></div></div>
-      <div class="acts"><label class="tog"><input type="checkbox" data-out="${d.id}" ${d.sold_out?'checked':''}> Sold out</label>
+      <div class="acts"><label class="tog"><input type="checkbox" data-spec="${d.id}" ${d.is_special?'checked':''}> Special</label><label class="tog"><input type="checkbox" data-out="${d.id}" ${d.sold_out?'checked':''}> Sold out</label>
       <button class="btn sec sm" data-mv="-1" data-id="${d.id}" aria-label="Move ${esc(d.name)} up">↑</button><button class="btn sec sm" data-mv="1" data-id="${d.id}" aria-label="Move ${esc(d.name)} down">↓</button>
       <button class="btn sec sm" data-edit="${d.id}">Edit</button><button class="btn danger sm" data-del="${d.id}">Delete</button></div></div>`).join(''):'<p class="empty">No dishes yet.</p>')+'</section>';
   }).join('')||'<p class="empty">Add a category to get started.</p>';
   $('phone').innerHTML=`<div class="ph-head"><h2>Our Kitchen</h2><p>Menu</p></div><div class="ph-body">`+
-  cats.map(c=>{const it=dishes.filter(d=>d.category_id===c.id);return it.length?`<h3>${esc(c.name)}</h3>`+it.map(d=>`<div class="pi ${d.sold_out?'out':''}"><div class="pl">${d.image_path?`<img src="${imgUrl(d.image_path)}" alt="">`:''}<div><span class="n">${esc(d.name)}</span>${d.sold_out?'<em>Sold out</em>':''}<small>${esc(d.description)}</small></div></div><b>${Number(d.price_kes).toLocaleString('en-KE')}</b></div>`).join(''):''}).join('')+`</div>`;
+  cats.map(c=>{const it=dishes.filter(d=>d.category_id===c.id);return it.length?`<h3>${esc(c.name)}</h3>`+it.map(d=>`<div class="pi ${d.sold_out?'out':''}"><div class="pl">${d.image_path?`<img src="${imgUrl(d.image_path)}" alt="">`:''}<div><span class="n">${esc(d.name)}</span>${d.is_special?'<em>Special</em>':''}${d.sold_out?'<em>Sold out</em>':''}<small>${esc(d.description)}</small></div></div><b>${Number(d.price_kes).toLocaleString('en-KE')}</b></div>`).join(''):''}).join('')+`</div>`;
 }
 
 /* Photos */
@@ -214,7 +233,7 @@ const removeFile=p=>p?sb.storage.from('dish-images').remove([p]).catch(()=>{}):n
 function openDlg(d){
   editing=d?d.id:null;$('dtitle').textContent=d?'Edit dish':'Add dish';$('ferr').textContent='';
   $('f-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  $('f-name').value=d?d.name:'';$('f-price').value=d?d.price_kes:'';$('f-desc').value=d?d.description:'';
+  $('f-name').value=d?d.name:'';$('f-price').value=d?d.price_kes:'';$('f-desc').value=d?d.description:'';$('f-spec').checked=!!(d&&d.is_special);
   if(d)$('f-cat').value=d.category_id;
   pendingBlob=null;keepPath=d?d.image_path:null;$('f-img').value='';showPrev();
   $('dlg').showModal();$('f-name').focus();
@@ -230,7 +249,7 @@ $('dsave').onclick=async()=>{
     const old=editing?dishes.find(x=>x.id===editing).image_path:null;
     let path=keepPath;
     if(pendingBlob){path=crypto.randomUUID()+'.jpg';await guard(sb.storage.from('dish-images').upload(path,pendingBlob,{contentType:'image/jpeg'}))}
-    const v={name,price_kes:price,category_id:$('f-cat').value,description:$('f-desc').value.trim(),image_path:path};
+    const v={name,price_kes:price,category_id:$('f-cat').value,description:$('f-desc').value.trim(),image_path:path,is_special:$('f-spec').checked};
     if(editing){await guard(sb.from('dishes').update(v).eq('id',editing))}
     else{await guard(sb.from('dishes').insert({...v,position:dishes.length}))}
     if(old&&old!==path)removeFile(old);
@@ -280,6 +299,7 @@ $('list').addEventListener('click',async e=>{
   }catch(x){}
 });
 $('list').addEventListener('change',async e=>{
+  if(e.target.dataset.spec){try{await guard(sb.from('dishes').update({is_special:e.target.checked}).eq('id',e.target.dataset.spec));await load();toast(e.target.checked?'Added to specials':'Removed from specials')}catch(x){await load()}return}
   if(!e.target.dataset.out)return;
   try{await guard(sb.from('dishes').update({sold_out:e.target.checked}).eq('id',e.target.dataset.out));await load();toast(e.target.checked?'Marked sold out':'Back on the menu')}catch(x){await load()}
 });
@@ -300,9 +320,62 @@ L.addEventListener('drop',async e=>{
 /* Tabs */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));
-  ['menu','sales','site'].forEach(v=>$('view-'+v).classList.toggle('hidden',v!==b.dataset.tab));
+  ['menu','orders','sales','staff','site'].forEach(v=>$('view-'+v).classList.toggle('hidden',v!==b.dataset.tab));
   if(b.dataset.tab==='sales'&&!$('s-from').value)setRange(0);
   if(b.dataset.tab==='site')loadSite();
+  if(b.dataset.tab==='orders')openOrdersTab();
+  if(b.dataset.tab==='staff')loadStaff();
+});
+
+/* Specials */
+$('clrspec').onclick=async()=>{
+  try{await guard(sb.from('dishes').update({is_special:false}).eq('is_special',true));await load();toast('Specials cleared')}catch(e){}
+};
+
+/* Orders and voids */
+function openOrdersTab(){if(!$('o-date').value)$('o-date').value=isoDay(new Date());loadOrders();loadVoids()}
+async function loadOrders(){
+  const d=$('o-date').value;
+  const a=new Date(d+'T00:00:00+03:00').toISOString(),b=new Date(new Date(d+'T00:00:00+03:00').getTime()+864e5).toISOString();
+  const {data,error}=await sb.from('orders').select('id,order_no,created_at,status,payment_method,mpesa_receipt,total_kes').gte('created_at',a).lt('created_at',b).order('created_at',{ascending:false});
+  if(error){toast(error.message);return}
+  $('o-body').innerHTML=data.length?data.map(o=>`<tr><td>#${o.order_no}</td><td>${new Date(o.created_at).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</td><td>${o.payment_method==='cash'?'Cash':o.payment_method?'M-Pesa'+(o.mpesa_receipt?' '+esc(o.mpesa_receipt):''):'-'}</td><td class="n">${kes(o.total_kes)}</td><td><span class="pill">${o.status}</span></td><td>${o.status==='paid'?`<button class="btn danger sm" data-void="${o.id}" data-no="${o.order_no}">Void</button>`:''}</td></tr>`).join(''):'<tr><td colspan="6">No orders on this day.</td></tr>';
+}
+async function loadVoids(){
+  const {data,error}=await sb.from('order_voids').select('*').order('voided_at',{ascending:false}).limit(30);
+  if(error){toast(error.message);return}
+  $('v-body').innerHTML=data.length?data.map(v=>`<tr><td>#${v.order_no}</td><td>${new Date(v.voided_at).toLocaleString('en-KE',{dateStyle:'medium',timeStyle:'short'})}</td><td class="n">${kes(v.total_kes)}</td><td>${esc(v.reason)}</td><td>${esc(v.voided_by_email||'')}</td></tr>`).join(''):'<tr><td colspan="5">No voided orders.</td></tr>';
+}
+$('o-run').onclick=loadOrders;
+$('o-body').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-void]');if(!b)return;
+  const reason=(prompt('Why is order #'+b.dataset.no+' being voided? (required)')||'').trim();
+  if(reason.length<3){toast('A reason is required.');return}
+  if(!confirm('Void order #'+b.dataset.no+'? It is removed from sales. Return the money to the customer by hand.'))return;
+  const {error}=await sb.rpc('void_order',{p_order:b.dataset.void,p_reason:reason});
+  toast(error?error.message:'Order voided');loadOrders();loadVoids();
+});
+
+/* Staff */
+async function staffCall(body){
+  const {data,error}=await sb.functions.invoke('manage-staff',{body});
+  if(error||!data||data.error){toast((data&&data.error)||(error&&error.message)||'Something went wrong');return null}
+  return data;
+}
+async function loadStaff(){
+  const r=await staffCall({action:'list'});if(!r)return;
+  $('stf-body').innerHTML=r.staff.map(s=>`<tr><td>${esc(s.email)}</td><td>${esc(s.role)}</td><td>${s.role==='owner'?'':`<button class="btn sec sm" data-pw="${s.user_id}">New password</button> <button class="btn danger sm" data-rm="${s.user_id}" data-em="${esc(s.email)}">Remove</button>`}</td></tr>`).join('')||'<tr><td colspan="3">No staff yet.</td></tr>';
+}
+$('stf-add').onclick=async()=>{
+  const email=$('stf-em').value.trim(),password=$('stf-pw').value;
+  if(!email||password.length<8){toast('Enter an email and a password of at least 8 characters.');return}
+  const r=await staffCall({action:'add',email,password});
+  if(r){$('stf-em').value='';$('stf-pw').value='';toast('Cashier added');loadStaff()}
+};
+$('stf-body').addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.rm&&confirm('Remove '+b.dataset.em+'? They will no longer be able to sign in.')){const r=await staffCall({action:'remove',user_id:b.dataset.rm});if(r){toast('Removed');loadStaff()}}
+  if(b.dataset.pw){const p=prompt('New password (at least 8 characters)');if(!p)return;if(p.length<8){toast('That password is too short');return}const r=await staffCall({action:'password',user_id:b.dataset.pw,password:p});if(r)toast('Password changed')}
 });
 
 /* Sales report */
@@ -312,7 +385,7 @@ async function runReport(){
   const {data:r,error}=await sb.rpc('sales_report',{p_from:$('s-from').value,p_to:$('s-to').value});
   if(error||!r){toast(error?error.message:'No data');return}
   const avg=r.orders?Math.round(r.total/r.orders):0,max=Math.max(1,...r.top.map(x=>x.revenue));
-  $('s-stats').innerHTML=[['Total sales',kes(r.total)],['Orders',r.orders],['Cash',kes(r.cash)],['M-Pesa',kes(r.mpesa)],['Average order',kes(avg)]].map(([a,b])=>`<div class="stat"><span>${a}</span><b>${b}</b></div>`).join('');
+  $('s-stats').innerHTML=[['Total sales',kes(r.total)],['Orders',r.orders],['Cash',kes(r.cash)],['M-Pesa',kes(r.mpesa)],['Average order',kes(avg)],['Voided',(r.voided_count||0)+' · '+kes(r.voided_total||0)]].map(([a,b])=>`<div class="stat"><span>${a}</span><b>${b}</b></div>`).join('');
   $('s-top').innerHTML=r.top.length?r.top.map(x=>`<tr><td>${esc(x.name)}<div class="bar2" style="width:${Math.round(x.revenue/max*100)}%"></div></td><td class="n">${x.qty}</td><td class="n">${kes(x.revenue)}</td></tr>`).join(''):'<tr><td colspan="3">No sales in this period.</td></tr>';
   $('s-daily').innerHTML=r.daily.length?r.daily.map(x=>`<tr><td>${x.day}</td><td class="n">${x.orders}</td><td class="n">${kes(x.total)}</td></tr>`).join(''):'<tr><td colspan="3">No sales in this period.</td></tr>';
 }
