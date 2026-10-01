@@ -104,5 +104,38 @@ footer{padding:26px 0;color:var(--muted);font-size:.9rem}
 </div></section>
 </main>
 
+<script>
+(()=>{
+  const URL_='https://srkzouqducveytskfuuy.supabase.co/rest/v1/site_settings?id=eq.1&select=*';
+  const KEY='sb_publishable_1nAtf0inkjIjNcudcPf-gw_QW7jCfUM';
+  const CACHE='kiki-site-details-v1';
+  const q=s=>document.querySelector(s);
+  const setText=(el,t)=>{if(el&&t)el.textContent=t};
+  const setLast=(a,t)=>{const n=[...a.childNodes].reverse().find(x=>x.nodeType===3);if(n)n.textContent=t;else a.append(t)};
+
+  function apply(d){
+    if(!d)return;
+    setText(q('.logo'),d.business_name);
+    if(d.business_name){document.title=d.business_name;const f=q('footer .wrap');if(f)f.textContent='© '+d.business_name}
+    setText(q('.hero h1'),d.tagline);
+    setText(q('#about .lead'),d.about);
+    const h=q('#visit .info > div:nth-child(1) p');
+    if(h&&d.hours){h.textContent=d.hours;h.style.whiteSpace='pre-line'}
+    const a=q('#visit .contact span');
+    if(a&&d.address){a.textContent=d.address;a.style.whiteSpace='pre-line'}
+    const ph=q('a[href^="tel:"]');
+    if(ph&&d.phone){ph.href='tel:'+d.phone.replace(/[^\d+]/g,'');setLast(ph,d.phone)}
+    const em=q('a[href^="mailto:"]');
+    if(em&&d.email){em.href='mailto:'+d.email;setLast(em,d.email)}
+    if(d.maps_url)document.querySelectorAll('a[href*="google.com/maps"]').forEach(l=>l.href=d.maps_url);
+  }
+
+  try{apply(JSON.parse(localStorage.getItem(CACHE)||'null'))}catch(e){}
+  fetch(URL_,{headers:{apikey:KEY}}).then(r=>r.ok?r.json():[]).then(rows=>{
+    if(rows[0]){apply(rows[0]);try{localStorage.setItem(CACHE,JSON.stringify(rows[0]))}catch(e){}}
+  }).catch(()=>{});
+})();
+</script>
+
 </body>
 </html>

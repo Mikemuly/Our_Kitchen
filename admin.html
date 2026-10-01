@@ -48,6 +48,14 @@ header{display:flex;justify-content:space-between;align-items:center;padding:14p
 .pl{display:flex;gap:10px;align-items:center}.pl img{width:52px;height:52px;border-radius:8px;object-fit:cover;flex:none}
 .pi small{display:block;color:#5b7269}.pi.out{opacity:.5}.pi.out .n{text-decoration:line-through}
 .pi em{font-style:normal;font-size:.75rem;background:#14342b;color:#fff;border-radius:6px;padding:1px 6px;margin-left:6px}
+
+.tabs{display:flex;gap:6px}.tabs button{background:transparent;border:0;border-bottom:3px solid transparent;padding:6px 10px;font-weight:700;cursor:pointer;color:var(--muted)}.tabs button[aria-pressed=true]{color:var(--ink);border-color:var(--yellow)}
+.wrap2{max-width:900px;margin:0 auto;padding:24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.stat span{color:var(--muted);font-size:.85rem}.stat b{display:block;font-size:1.4rem;font-family:'Bricolage Grotesque',sans-serif}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line)}td.n,th.n{text-align:right}
+.bar2{height:8px;border-radius:4px;background:var(--yellow);margin-top:4px}
+.fgrid{display:grid;gap:14px;max-width:560px}
 dialog{border:0;border-radius:18px;padding:24px;width:min(440px,92vw);background:var(--card);color:var(--ink)}
 dialog::backdrop{background:#0008}
 .frm{display:grid;gap:14px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.frm .end{display:flex;gap:10px;justify-content:flex-end}
@@ -71,8 +79,8 @@ dialog::backdrop{background:#0008}
 </div>
 
 <div id="app" class="hidden">
-  <header><h1>Menu editor</h1><div class="who"><span id="who"></span><button class="btn sec sm" id="signout">Sign out</button></div></header>
-  <div class="layout">
+  <header><h1>Admin</h1><nav class="tabs" aria-label="Sections"><button data-tab="menu" aria-pressed="true">Menu</button><button data-tab="sales" aria-pressed="false">Sales</button><button data-tab="site" aria-pressed="false">Site details</button></nav><div class="who"><span id="who"></span><button class="btn sec sm" id="signout">Sign out</button></div></header>
+  <div class="layout" id="view-menu">
     <main>
       <div class="bar"><h2>Your menu</h2><div class="acts"><button class="btn sec" id="addcat">Add category</button><button class="btn" id="adddish">Add dish</button></div></div>
       <div id="list"></div>
@@ -81,6 +89,34 @@ dialog::backdrop{background:#0008}
       <p class="note" style="margin-bottom:8px">What customers see after scanning the QR code.</p>
       <div class="phone" id="phone" aria-label="Customer menu preview"></div>
     </aside>
+  </div>
+
+  <div id="view-sales" class="wrap2 hidden">
+    <div class="bar"><h2>Sales</h2><div class="acts"><button class="btn sec sm" id="s-today">Today</button><button class="btn sec sm" id="s-7">7 days</button><button class="btn sec sm" id="s-30">30 days</button></div></div>
+    <div class="acts" style="justify-content:flex-start;align-items:flex-end">
+      <label>From<input id="s-from" type="date" style="width:auto"></label><label>To<input id="s-to" type="date" style="width:auto"></label>
+      <button class="btn" id="s-run">Show</button><button class="btn sec" id="s-csv">Download CSV</button>
+    </div>
+    <div class="stats" id="s-stats"></div>
+    <h3>Best sellers</h3>
+    <table><thead><tr><th>Dish</th><th class="n">Sold</th><th class="n">Sales</th></tr></thead><tbody id="s-top"></tbody></table>
+    <h3 style="margin-top:20px">By day</h3>
+    <table><thead><tr><th>Date</th><th class="n">Orders</th><th class="n">Sales</th></tr></thead><tbody id="s-daily"></tbody></table>
+  </div>
+  <div id="view-site" class="wrap2 hidden">
+    <h2 style="margin-bottom:6px">Site details</h2>
+    <p class="note" style="margin-bottom:16px">These show on the homepage. Leave a box empty to keep the text already on the page.</p>
+    <div class="fgrid">
+      <label>Business name<input id="st-business_name"></label>
+      <label>Headline<input id="st-tagline"></label>
+      <label>About us<textarea id="st-about" rows="4"></textarea></label>
+      <label>Opening hours (one line per row)<textarea id="st-hours" rows="3"></textarea></label>
+      <label>Address<textarea id="st-address" rows="2"></textarea></label>
+      <label>Phone<input id="st-phone" type="tel"></label>
+      <label>Email<input id="st-email" type="email"></label>
+      <label>Google Maps link<input id="st-maps_url" type="url"></label>
+      <button class="btn" id="st-save">Save</button>
+    </div>
   </div>
 </div>
 
@@ -260,6 +296,49 @@ L.addEventListener('drop',async e=>{
   if(r){dishes.splice(dishes.indexOf(dishes.find(x=>x.id===r.dataset.id)),0,d)}else{dishes.push(d)}
   dragId=null;render();await saveOrder();
 });
+
+/* Tabs */
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  ['menu','sales','site'].forEach(v=>$('view-'+v).classList.toggle('hidden',v!==b.dataset.tab));
+  if(b.dataset.tab==='sales'&&!$('s-from').value)setRange(0);
+  if(b.dataset.tab==='site')loadSite();
+});
+
+/* Sales report */
+const isoDay=d=>d.toLocaleDateString('en-CA',{timeZone:'Africa/Nairobi'});
+function setRange(back){$('s-from').value=isoDay(new Date(Date.now()-back*864e5));$('s-to').value=isoDay(new Date());runReport()}
+async function runReport(){
+  const {data:r,error}=await sb.rpc('sales_report',{p_from:$('s-from').value,p_to:$('s-to').value});
+  if(error||!r){toast(error?error.message:'No data');return}
+  const avg=r.orders?Math.round(r.total/r.orders):0,max=Math.max(1,...r.top.map(x=>x.revenue));
+  $('s-stats').innerHTML=[['Total sales',kes(r.total)],['Orders',r.orders],['Cash',kes(r.cash)],['M-Pesa',kes(r.mpesa)],['Average order',kes(avg)]].map(([a,b])=>`<div class="stat"><span>${a}</span><b>${b}</b></div>`).join('');
+  $('s-top').innerHTML=r.top.length?r.top.map(x=>`<tr><td>${esc(x.name)}<div class="bar2" style="width:${Math.round(x.revenue/max*100)}%"></div></td><td class="n">${x.qty}</td><td class="n">${kes(x.revenue)}</td></tr>`).join(''):'<tr><td colspan="3">No sales in this period.</td></tr>';
+  $('s-daily').innerHTML=r.daily.length?r.daily.map(x=>`<tr><td>${x.day}</td><td class="n">${x.orders}</td><td class="n">${kes(x.total)}</td></tr>`).join(''):'<tr><td colspan="3">No sales in this period.</td></tr>';
+}
+$('s-today').onclick=()=>setRange(0);$('s-7').onclick=()=>setRange(6);$('s-30').onclick=()=>setRange(29);$('s-run').onclick=runReport;
+$('s-csv').onclick=async()=>{
+  const from=$('s-from').value,to=$('s-to').value;
+  const a=new Date(from+'T00:00:00+03:00').toISOString(),b=new Date(new Date(to+'T00:00:00+03:00').getTime()+864e5).toISOString();
+  const {data,error}=await sb.from('orders').select('order_no,paid_at,payment_method,mpesa_receipt,total_kes').eq('status','paid').gte('paid_at',a).lt('paid_at',b).order('paid_at').limit(5000);
+  if(error){toast(error.message);return}
+  const q=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`;
+  const csv=['Order,Paid at,Method,M-Pesa code,Total KES',...data.map(o=>[o.order_no,o.paid_at,o.payment_method,o.mpesa_receipt,o.total_kes].map(q).join(','))].join('\n');
+  const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));l.download=`sales-${from}-to-${to}.csv`;l.click();
+};
+
+/* Site details */
+const SITE=['business_name','tagline','about','hours','address','phone','email','maps_url'];
+async function loadSite(){
+  const {data,error}=await sb.from('site_settings').select('*').eq('id',1).maybeSingle();
+  if(error){toast(error.message);return}
+  SITE.forEach(k=>$('st-'+k).value=(data&&data[k])||'');
+}
+$('st-save').onclick=async()=>{
+  const v={};SITE.forEach(k=>v[k]=$('st-'+k).value.trim());
+  const {data,error}=await sb.from('site_settings').update(v).eq('id',1).select();
+  toast(error?error.message:(data&&data.length?'Saved. The homepage updates on its next load.':'Could not save. Is this the owner account?'));
+};
 
 sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_OUT')show('login')});
 enter();

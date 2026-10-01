@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Kitchen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#fffdf5;--ink:#14342b;--muted:#5b7269;--line:#14342b26;--yellow:#ffc82e;--green:#14342b;--red:#b3261e;--card:#fff;--btn-ink:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1f1a;--ink:#f2efe2;--muted:#a6b8af;--line:#f2efe233;--card:#172a23;--green:#ffc82e;--btn-ink:#14342b}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.4 'DM Sans',system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom,0px)}
+h1,h2,h3{font-family:'Bricolage Grotesque',sans-serif;margin:0}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #2f7cff;outline-offset:2px}
+.btn{background:var(--green);color:var(--btn-ink);border:0;border-radius:12px;padding:14px 18px;font-weight:700;cursor:pointer;width:100%;font-size:1.05rem}
+.btn.sec{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.sm{width:auto;padding:8px 14px;font-size:.95rem}
+.hidden{display:none!important}
+#login{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--yellow)}
+.box{background:var(--card);padding:32px;border-radius:20px;width:100%;max-width:380px;display:grid;gap:14px}
+label{display:grid;gap:4px;font-weight:500;font-size:.95rem}
+input{border:1.5px solid var(--line);border-radius:10px;padding:12px;background:var(--bg);width:100%}
+.note{color:var(--muted);font-size:.85rem;margin:0}.err{color:var(--red);font-size:.9rem;margin:0;min-height:1.2em}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 20px;padding-top:calc(12px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--line);background:var(--card)}
+.who{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:.9rem;flex-wrap:wrap}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:16px}
+.col h2{font-size:1.2rem;padding:8px 4px;display:flex;justify-content:space-between}
+.col h2 span{color:var(--muted);font-weight:500}
+.ticket{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;display:grid;gap:10px}
+.ticket.late{border-color:var(--red)}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.top b{font:800 1.6rem 'Bricolage Grotesque',sans-serif}
+.wait{color:var(--muted)}.late .wait{color:var(--red);font-weight:700}
+.ticket ul{margin:0;padding:0;list-style:none;font-size:1.15rem}
+.ticket li{padding:3px 0;border-bottom:1px dashed var(--line)}.ticket li:last-child{border:0}
+.empty{color:var(--muted);padding:8px 4px}
+@media(max-width:860px){.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="login" class="hidden"><div class="box">
+  <h1>Kitchen</h1><p class="note">Staff sign in</p>
+  <label>Email<input id="em" type="email" autocomplete="username"></label>
+  <label>Password<input id="pw" type="password" autocomplete="current-password"></label>
+  <p class="err" id="lerr" role="alert"></p>
+  <button class="btn" id="signin">Sign in</button>
+</div></div>
+
+<div id="app" class="hidden">
+  <header><h1>Kitchen</h1>
+    <div class="who"><span id="conn" class="err"></span><button class="btn sec sm" id="snd">Sound off</button><span id="who"></span><button class="btn sec sm" id="signout">Sign out</button></div>
+  </header>
+  <div class="cols">
+    <section class="col"><h2>New <span id="n-new"></span></h2><div id="c-new"></div></section>
+    <section class="col"><h2>Preparing <span id="n-preparing"></span></h2><div id="c-preparing"></div></section>
+    <section class="col"><h2>Ready <span id="n-ready"></span></h2><div id="c-ready"></div></section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SB_URL='https://srkzouqducveytskfuuy.supabase.co';
+const SB_KEY='sb_publishable_1nAtf0inkjIjNcudcPf-gw_QW7jCfUM';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let orders=[],seen=null,timer=null,sound=false,ctx=null;
+const NEXT={new:['preparing','Start cooking'],preparing:['ready','Mark ready'],ready:['collected','Collected']};
+
+function show(v){$('login').classList.toggle('hidden',v!=='login');$('app').classList.toggle('hidden',v!=='app')}
+function beep(){
+  if(!sound||!ctx)return;
+  try{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(ctx.currentTime+.3)}catch(e){}
+}
+$('snd').onclick=()=>{
+  sound=!sound;$('snd').textContent=sound?'Sound on':'Sound off';
+  if(sound){ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();beep()}
+};
+
+async function enter(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){show('login');return}
+  const {data}=await sb.from('staff').select('role').eq('user_id',session.user.id).maybeSingle();
+  if(!data||!['owner','cashier'].includes(data.role)){await sb.auth.signOut();$('lerr').textContent='This account is not set up as staff.';show('login');return}
+  $('who').textContent=session.user.email;show('app');seen=null;refresh();
+  clearInterval(timer);timer=setInterval(refresh,5000);
+}
+$('signin').onclick=async()=>{
+  $('lerr').textContent='';const b=$('signin');b.disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email:$('em').value.trim(),password:$('pw').value});
+  b.disabled=false;if(error){$('lerr').textContent='Wrong email or password.';return}
+  $('pw').value='';enter();
+};
+$('signout').onclick=async()=>{clearInterval(timer);await sb.auth.signOut();show('login')};
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){clearInterval(timer);show('login')}});
+
+async function refresh(){
+  const since=new Date(Date.now()-12*3600e3).toISOString();
+  const {data,error}=await sb.from('orders').select('id,order_no,paid_at,kitchen_status,order_items(name,qty)')
+    .eq('status','paid').in('kitchen_status',['new','preparing','ready']).gte('paid_at',since).order('paid_at');
+  if(error){$('conn').textContent='Connection problem…';return}
+  $('conn').textContent='';
+  if(seen&&data.some(o=>o.kitchen_status==='new'&&!seen.has(o.id)))beep();
+  seen=new Set([...(seen||[]),...data.map(o=>o.id)]);
+  orders=data;render();
+}
+function render(){
+  ['new','preparing','ready'].forEach(st=>{
+    const list=orders.filter(o=>o.kitchen_status===st);
+    $('n-'+st).textContent=list.length?'('+list.length+')':'';
+    $('c-'+st).innerHTML=list.map(o=>{
+      const mins=Math.max(0,Math.floor((Date.now()-new Date(o.paid_at))/60000));
+      const late=st==='new'&&mins>=10;
+      return `<article class="ticket ${late?'late':''}"><div class="top"><b>#${o.order_no}</b><span class="wait">${mins} min</span></div>
+        <ul>${(o.order_items||[]).map(i=>`<li><b>${i.qty} ×</b> ${esc(i.name)}</li>`).join('')}</ul>
+        <button class="btn" data-id="${o.id}" data-to="${NEXT[st][0]}">${NEXT[st][1]}</button></article>`;
+    }).join('')||'<p class="empty">Nothing here.</p>';
+  });
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-to]');if(!b)return;
+  b.disabled=true;
+  const {error}=await sb.rpc('set_kitchen_status',{p_order:b.dataset.id,p_status:b.dataset.to});
+  if(error){$('conn').textContent=error.message;b.disabled=false;return}
+  refresh();
+});
+enter();
+</script>
+</body>
+</html>
