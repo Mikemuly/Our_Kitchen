@@ -101,10 +101,11 @@ dialog::backdrop{background:#0008}
   <div id="view-staff" class="wrap2 hidden">
     <h2 style="margin-bottom:6px">Staff</h2>
     <p class="note" style="margin-bottom:12px">Cashiers can take orders and use the kitchen screen. They cannot edit the menu, see sales or void orders.</p>
-    <table><thead><tr><th>Email</th><th>Role</th><th></th></tr></thead><tbody id="stf-body"></tbody></table>
+    <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead><tbody id="stf-body"></tbody></table>
     <h3 style="margin:24px 0 10px">Add a cashier</h3>
     <div class="fgrid">
-      <label>Email<input id="stf-em" type="email" autocomplete="off"></label>
+      <label>Name (shown on receipts as "Served by")<input id="stf-name" maxlength="30" autocomplete="off"></label>
+      <label>Email (used to sign in)<input id="stf-em" type="email" autocomplete="off"></label>
       <label>Password (at least 8 characters)<input id="stf-pw" type="text" autocomplete="off"></label>
       <button class="btn" id="stf-add">Add cashier</button>
     </div>
@@ -365,16 +366,17 @@ async function staffCall(body){
 }
 async function loadStaff(){
   const r=await staffCall({action:'list'});if(!r)return;
-  $('stf-body').innerHTML=r.staff.map(s=>`<tr><td>${esc(s.email)}</td><td>${esc(s.role)}</td><td>${s.role==='owner'?'':`<button class="btn sec sm" data-pw="${s.user_id}">New password</button> <button class="btn danger sm" data-rm="${s.user_id}" data-em="${esc(s.email)}">Remove</button>`}</td></tr>`).join('')||'<tr><td colspan="3">No staff yet.</td></tr>';
+  $('stf-body').innerHTML=r.staff.map(s=>`<tr><td>${esc(s.display_name||'')}</td><td>${esc(s.email)}</td><td>${esc(s.role)}</td><td><button class="btn sec sm" data-rn="${s.user_id}" data-nm="${esc(s.display_name||'')}">Rename</button>${s.role==='owner'?'':` <button class="btn sec sm" data-pw="${s.user_id}">New password</button> <button class="btn danger sm" data-rm="${s.user_id}" data-em="${esc(s.email)}">Remove</button>`}</td></tr>`).join('')||'<tr><td colspan="4">No staff yet.</td></tr>';
 }
 $('stf-add').onclick=async()=>{
-  const email=$('stf-em').value.trim(),password=$('stf-pw').value;
-  if(!email||password.length<8){toast('Enter an email and a password of at least 8 characters.');return}
-  const r=await staffCall({action:'add',email,password});
-  if(r){$('stf-em').value='';$('stf-pw').value='';toast('Cashier added');loadStaff()}
+  const name=$('stf-name').value.trim(),email=$('stf-em').value.trim(),password=$('stf-pw').value;
+  if(name.length<2||!email||password.length<8){toast('Enter a name, an email and a password of at least 8 characters.');return}
+  const r=await staffCall({action:'add',email,password,name});
+  if(r){$('stf-name').value='';$('stf-em').value='';$('stf-pw').value='';toast('Cashier added');loadStaff()}
 };
 $('stf-body').addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.rn){const n=(prompt('Name shown on receipts',b.dataset.nm)||'').trim();if(n.length<2)return;const r=await staffCall({action:'rename',user_id:b.dataset.rn,name:n});if(r){toast('Name updated');loadStaff()}}
   if(b.dataset.rm&&confirm('Remove '+b.dataset.em+'? They will no longer be able to sign in.')){const r=await staffCall({action:'remove',user_id:b.dataset.rm});if(r){toast('Removed');loadStaff()}}
   if(b.dataset.pw){const p=prompt('New password (at least 8 characters)');if(!p)return;if(p.length<8){toast('That password is too short');return}const r=await staffCall({action:'password',user_id:b.dataset.pw,password:p});if(r)toast('Password changed')}
 });

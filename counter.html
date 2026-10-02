@@ -109,9 +109,9 @@ function show(v){$('login').classList.toggle('hidden',v!=='login');$('app').clas
 async function enter(){
   const {data:{session}}=await sb.auth.getSession();
   if(!session){show('login');return}
-  const {data}=await sb.from('staff').select('role').eq('user_id',session.user.id).maybeSingle();
+  const {data}=await sb.from('staff').select('role,display_name').eq('user_id',session.user.id).maybeSingle();
   if(!data||!['owner','cashier'].includes(data.role)){await sb.auth.signOut();$('lerr').textContent='This account is not set up as staff.';show('login');return}
-  $('who').textContent=session.user.email+' ('+data.role+')';show('app');await load();
+  $('who').textContent=(data.display_name||session.user.email)+' ('+data.role+')';show('app');await load();
 }
 $('signin').onclick=async()=>{
   $('lerr').textContent='';const b=$('signin');b.disabled=true;
@@ -176,7 +176,7 @@ async function showReceipt(orderId,autoPrint){
   const r=o.data,pm={cash:'Cash',mpesa_manual:'M-Pesa',mpesa_stk:'M-Pesa'}[r.payment_method]||'';
   const d=new Date(r.paid_at||r.created_at);
   $('receipt').innerHTML=`<h2>Our Kitchen</h2><div class="c">Tudor Mombasa</div><hr>
-    <div class="r"><span>Order #${r.order_no}</span><span>${d.toLocaleDateString('en-KE')} ${d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</span></div><hr>`+
+    <div class="r"><span>Order #${r.order_no}</span><span>${d.toLocaleDateString('en-KE')} ${d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}</span></div>${r.served_by?`<div class="r"><span>Served by</span><span>${esc(r.served_by)}</span></div>`:''}<hr>`+
     i.data.map(x=>`<div class="r"><span>${x.qty} x ${esc(x.name)}</span><span>${(x.qty*x.price_kes).toLocaleString('en-KE')}</span></div>`).join('')+
     `<hr><div class="r"><b>TOTAL</b><b>${kes(r.total_kes)}</b></div>`+
     (r.status==='paid'?`<div class="r"><span>Paid by</span><span>${pm}</span></div>`+(r.mpesa_receipt?`<div class="r"><span>M-Pesa ref</span><span>${esc(r.mpesa_receipt)}</span></div>`:''):`<div class="c"><b>${esc(r.status.toUpperCase())}</b></div>`)+
