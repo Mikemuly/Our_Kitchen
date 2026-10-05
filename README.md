@@ -1,9 +1,9 @@
 # Hi, I'm Mike 
 
-I'm a developer based in Mombasa, Kenya, building practical web apps for local businesses.
+I'm a developer based in Kenya, building practical web apps for local businesses.
 
 ## What I'm working on
-- 🍽️ **Our Kitchen**: website and order system for a restaurant (HTML, JavaScript, Supabase)
+-  **Our Kitchen**: website and order system for a restaurant (HTML, JavaScript, Supabase)
 
 ## What I'm learning
 -  Trying to put my hands on Mpesa integration with the daraja platform
@@ -19,4 +19,4 @@ I'm a developer based in Mombasa, Kenya, building practical web apps for local b
 -  I'm open to any kind of collaborations
 
 ## Reach me
-- 📫 Email: mulymike761@gmail.com
+-  Email: mulymike761@gmail.com
